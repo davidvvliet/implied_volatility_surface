@@ -4,12 +4,14 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 from scipy.stats import norm
-from scipy.interpolate import griddata
+import scipy.interpolate as spi
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import plotly.graph_objects as go
 from datetime import datetime, date
+
+#ADD CUBIC SPLINE INTERPOLATION
 
 st.title("Implied Volatility Surface")
 
@@ -22,34 +24,13 @@ st.title("Implied Volatility Surface")
 
 def plot(data):
 
+    spline = spi.SmoothBivariateSpline(data['Days To Expiration'], data['Strike'], data['Implied Vol'], kx=3, ky=3, s=0)
+
     xi = np.linspace(data['Days To Expiration'].min(), data['Days To Expiration'].max(), 250)
     yi = np.linspace(data['Strike'].min(), data['Strike'].max(), 250)
-    # xi = np.unique(data['Days To Expiration'])
-    # yi = np.unique(data['Strike'])
 
     X, Y = np.meshgrid(xi, yi)
-
-    Z = griddata((data['Days To Expiration'], data['Strike']), data['Implied Vol'], (X, Y), method='cubic')
-    Z = np.clip(Z, data['Implied Vol'].min(), data['Implied Vol'].max())
-
-    # fig = plt.figure(figsize=(8, 6))
-    # ax = fig.add_subplot(111, projection='3d')
-
-    # ax.plot_surface(X, Y, Z, cmap='viridis')
-
-    
-    # # Z = gaussian_filter(data['Implied Vol'], sigma=0.5)
-    # # fig = plt.figure(figsize=(8, 6))
-    # # ax = fig.add_subplot(111, projection='3d')
-
-    # # ax.plot_trisurf(data['Days To Expiration'], data['Strike'], Z, cmap='viridis')
-
-    # ax.set_xlabel('Days To Expiration')
-    # ax.set_ylabel('Strike')
-    # ax.set_zlabel('Implied Vol')
-
-
-    # st.pyplot(fig, clear_figure=True)
+    Z = np.clip(spline(xi, yi), data['Implied Vol'].min(), data['Implied Vol'].max())
 
     fig = go.Figure()
 
